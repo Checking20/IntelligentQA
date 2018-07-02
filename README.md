@@ -1,2 +1,2 @@
 # IntelligentQA
-暑期实训xiangmu
+暑期实训项目
