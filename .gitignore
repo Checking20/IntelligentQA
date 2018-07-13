@@ -1,1 +1,3 @@
 segfa/*.json
+*.pyc
+segfa/segfa/.idea/*
