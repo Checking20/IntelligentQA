@@ -1,3 +1,4 @@
 segfa/*.json
 *.pyc
 segfa/segfa/.idea/*
+service/flasky/.idea/*
