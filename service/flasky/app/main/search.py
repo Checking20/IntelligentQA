@@ -31,14 +31,14 @@ def pretreatment(json_list):
 
 
 # 训练模型
-def train_model(timing=0):
-    resp = requests.get('http://211.87.230.22:8080/abcde')
+def train_model(timing=0, model_url_prefix=''):
+    resp = requests.post('http://60.205.216.102:8080/abcde')
     docs = pretreatment(resp.json()['data'])
-    model = Doc2Vec(dm=1, sample=0, vector_size=200, window=10, min_count=1, workers=4)
+    model = Doc2Vec(dm=1, sample=0, vector_size=200, window=10, min_count=1, workers=1)
     model.build_vocab(docs)
     model.train(docs, total_examples=model.corpus_count, epochs=80)
     tom = date.today()
-    model.save("models/d2v_"+date(tom.year, tom.month, tom.day+timing).strftime('%Y-%m-%d')+".model")
+    model.save(model_url_prefix+"models/d2v_"+date(tom.year, tom.month, tom.day+timing).strftime('%Y-%m-%d')+".model")
 
 
 # 寻找最相似的提问
@@ -68,5 +68,7 @@ def search_questions(text):
         if word in stopwords:
             continue
         sentence.append(word)
-
     return json.dumps(get_similar(sentence, topn=20))
+
+if __name__ == '__main__':
+    train_model(model_url_prefix='../..')
