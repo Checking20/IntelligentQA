@@ -7,6 +7,10 @@ import json
 
 # 进行分词并转换成模型需要的格式
 def pretreatment(json_list):
+    '''
+    :param json_list: 文档json数据转换得到的dict_list
+    :return: list of TaggedDocument
+    '''
     # 设置停用词
     stopwords = []
     with open('stop_words.txt', encoding="UTF-8") as input_file:
@@ -32,10 +36,17 @@ def pretreatment(json_list):
 
 # 训练模型
 def train_model(timing=0, model_url_prefix=''):
+    '''
+    :param timing: 延迟（离线计算下一天的模型）
+    :param model_url_prefix: 模型存储url前缀（离线计算需标注）
+    :return: 无返回值
+    '''
     resp = requests.post('http://60.205.216.102:8080/abcde')
     docs = pretreatment(resp.json()['data'])
-    model = Doc2Vec(dm=1, sample=0, vector_size=200, window=10, min_count=1, workers=1)
+    model = Doc2Vec(alpha=0.025, min_alpha=0.025, min_count=2, window=10, size=400, sample=1e-5, train_lbls=False, workers=1)
+    # 建立词典
     model.build_vocab(docs)
+    # 训练模型
     model.train(docs, total_examples=model.corpus_count, epochs=80)
     tom = date.today()
     model.save(model_url_prefix+"models/d2v_"+date(tom.year, tom.month, tom.day+timing).strftime('%Y-%m-%d')+".model")
@@ -46,14 +57,26 @@ def get_similar(word_list, topn):
     '''
     :param word_list 分词结果
     :param topn 最相似的N个
+    :return list of tuple(问题id,相似度)
     '''
-    model = Doc2Vec.load("models/d2v_"+date.today().strftime('%Y-%m-%d')+".model")
+
+    model = None
+    # 如果得不到当天的模型，使用默认模型
+    try:
+        model = Doc2Vec.load("models/d2v_"+date.today().strftime('%Y-%m-%d')+".model")
+    except FileNotFoundError:
+        model = Doc2Vec.load("models/d2v_default.model")
+    # 计算提问的向量
     infer = model.infer_vector(word_list)
     return model.docvecs.most_similar([infer], topn=topn)
 
 
 # 针对查询进行相关问题检索
-def search_questions(text):
+def search_questions(text, start=0, row=20):
+    '''
+    :param text: 用户查询文本
+    :return: json
+    '''
     # 添加停止词
     stopwords = []
     with open('stop_words.txt', encoding="UTF-8") as input_file:
@@ -68,7 +91,7 @@ def search_questions(text):
         if word in stopwords:
             continue
         sentence.append(word)
-    return json.dumps(get_similar(sentence, topn=20))
+    return json.dumps(get_similar(sentence, topn=start+row)[start:])
 
 if __name__ == '__main__':
-    train_model(model_url_prefix='../..')
+    train_model(timing=1)
