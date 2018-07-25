@@ -4,6 +4,10 @@ import requests
 import jieba
 import json
 
+# 绝对路径
+sw_url = '/root/github/IntelligentQA-master/flasky/stop_words.txt'
+model_url_prefix = '/root/github/IntelligentQA-master/flasky/'
+
 
 # 进行分词并转换成模型需要的格式
 def pretreatment(json_list):
@@ -13,7 +17,7 @@ def pretreatment(json_list):
     '''
     # 设置停用词
     stopwords = []
-    with open('stop_words.txt', encoding="UTF-8") as input_file:
+    with open(sw_url, encoding="UTF-8") as input_file:
         stopwords = [line.strip() for line in input_file.readlines()]
         stopwords += ['\n', ' ']
 
@@ -35,15 +39,14 @@ def pretreatment(json_list):
 
 
 # 训练模型
-def train_model(timing=0, model_url_prefix=''):
+def train_model(timing=0):
     '''
     :param timing: 延迟（离线计算下一天的模型）
-    :param model_url_prefix: 模型存储url前缀（离线计算需标注）
     :return: 无返回值
     '''
     resp = requests.post('http://60.205.216.102:8080/abcde')
     docs = pretreatment(resp.json()['data'])
-    model = Doc2Vec(alpha=0.025, min_alpha=0.025, min_count=2, window=10, size=400, sample=1e-5, train_lbls=False, workers=1)
+    model = Doc2Vec(alpha=0.025, min_alpha=0.025, min_count=2, window=10, vector_size=400, sample=1e-5, train_lbls=False, workers=1)
     # 建立词典
     model.build_vocab(docs)
     # 训练模型
@@ -75,11 +78,13 @@ def get_similar(word_list, topn):
 def search_questions(text, start=0, row=20):
     '''
     :param text: 用户查询文本
-    :return: json
+    :param start: 起始序号
+    :param row: 需要结果个数
+    :return: 序列化的json
     '''
     # 添加停止词
     stopwords = []
-    with open('stop_words.txt', encoding="UTF-8") as input_file:
+    with open(sw_url, encoding="UTF-8") as input_file:
         stopwords = [line.strip() for line in input_file.readlines()]
         stopwords += ['\n', ' ']
 
