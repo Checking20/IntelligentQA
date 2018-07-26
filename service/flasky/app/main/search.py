@@ -44,7 +44,7 @@ def train_model(timing=0):
     :param timing: 延迟（离线计算下一天的模型）
     :return: 无返回值
     '''
-    resp = requests.post('http://60.205.216.102:8080/abcde')
+    resp = requests.post('http://60.205.216.102:1217/abcde')
     docs = pretreatment(resp.json()['data'])
     model = Doc2Vec(alpha=0.025, min_alpha=0.025, min_count=2, window=10, vector_size=400, sample=1e-5, train_lbls=False, workers=1)
     # 建立词典
